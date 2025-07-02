@@ -36,13 +36,14 @@ class HandleInertiaRequests extends Middleware
                     'id' => $request->user()->id,
                     'nombre' => $request->user()->nombre,
                     'correo' => $request->user()->correo,
+                    'tipo_usuario' => $request->user()->tipoUsuario->nombre ?? null,
+                    'avatar' => $request->user()->avatar,
+                    'avatar_url' => $request->user()->avatar_url,
                     'es_docente' => $request->user()->esDocente(),
                     'es_estudiante' => $request->user()->esEstudiante(),
                     'esta_activo' => $request->user()->estaActivo(),
                     'ultimo_acceso' => $request->user()->ultimo_acceso,
-                    'perfil' => $request->user()->esDocente() 
-                        ? $request->user()->docente 
-                        : $request->user()->estudiante,
+                    'perfil' => $this->getUserProfile($request->user()),
                 ] : null,
             ],
             'flash' => [
@@ -60,33 +61,38 @@ class HandleInertiaRequests extends Middleware
                 'locale' => app()->getLocale(),
                 'timezone' => config('app.timezone'),
             ],
-            'ziggy' => function () {
+            'ziggy' => function () use ($request) {
                 return [
-                    'location' => request()->url(),
-                    'query' => request()->query(),
+                    'location' => $request->url(),
+                    'query' => $request->query(),
                 ];
             },
         ]);
     }
-    public function share(Request $request): array
+
+    /**
+     * Obtener el perfil del usuario (docente o estudiante)
+     */
+    private function getUserProfile($user)
     {
-    return array_merge(parent::share($request), [
-        'auth' => [
-            'user' => $request->user() ? [
-                'id' => $request->user()->id,
-                'nombre' => $request->user()->nombre,
-                'correo' => $request->user()->correo,
-                'tipo_usuario' => $request->user()->tipoUsuario->nombre ?? null,
-                'avatar' => $request->user()->avatar,
-                'avatar_url' => $request->user()->avatar_url,
-            ] : null,
-        ],
-        'flash' => [
-            'success' => fn () => $request->session()->get('success'),
-            'error' => fn () => $request->session()->get('error'),
-            'info' => fn () => $request->session()->get('info'),
-            'warning' => fn () => $request->session()->get('warning'),
-        ],
-    ]);
-}
+        if (!$user) {
+            return null;
+        }
+
+        if ($user->esDocente()) {
+            return $user->docente()->with(['clases' => function ($query) {
+                $query->select('id', 'nombre', 'codigo_acceso', 'id_docente')
+                      ->where('activa', true);
+            }])->first();
+        }
+
+        if ($user->esEstudiante()) {
+            return $user->estudiante()->with(['personajes' => function ($query) {
+                $query->select('id', 'nombre', 'nivel', 'experiencia', 'id_estudiante', 'id_clase')
+                      ->with(['clase:id,nombre']);
+            }])->first();
+        }
+
+        return null;
+    }
 }

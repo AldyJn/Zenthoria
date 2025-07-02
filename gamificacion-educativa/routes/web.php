@@ -205,30 +205,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ==========================================
     // GESTIÓN DE COMPORTAMIENTO
     // ==========================================
-    Route::prefix('clases/{clase}/comportamiento')->name('comportamiento.')->group(function () {
-        Route::get('/', [ComportamientoController::class, 'index'])->name('index');
-        Route::get('/estudiante/{estudiante}', [ComportamientoController::class, 'reporteEstudiante'])->name('reporte-estudiante');
+    // Route::prefix('clases/{clase}/comportamiento')->name('comportamiento.')->group(function () {
+    //     Route::get('/', [ComportamientoController::class, 'index'])->name('index');
+    //     Route::get('/estudiante/{estudiante}', [ComportamientoController::class, 'reporteEstudiante'])->name('reporte-estudiante');
         
-        // Solo docentes pueden gestionar comportamientos
-        Route::middleware('user.type:docente')->group(function () {
-            Route::get('/crear', [ComportamientoController::class, 'create'])->name('create');
-            Route::post('/', [ComportamientoController::class, 'store'])->name('store');
-            Route::post('/rapido', [ComportamientoController::class, 'registroRapido'])->name('rapido');
-            Route::delete('/{registro}', [ComportamientoController::class, 'destroy'])->name('destroy');
-        });
-    });
+    //     // Solo docentes pueden gestionar comportamientos
+    //     Route::middleware('user.type:docente')->group(function () {
+    //         Route::get('/crear', [ComportamientoController::class, 'create'])->name('create');
+    //         Route::post('/', [ComportamientoController::class, 'store'])->name('store');
+    //         Route::post('/rapido', [ComportamientoController::class, 'registroRapido'])->name('rapido');
+    //         Route::delete('/{registro}', [ComportamientoController::class, 'destroy'])->name('destroy');
+    //     });
+    // });
 
     // ==========================================
     // TIPOS DE COMPORTAMIENTO (Solo Docentes)
     // ==========================================
-    Route::prefix('tipos-comportamiento')->name('tipo-comportamiento.')->middleware('user.type:docente')->group(function () {
-        Route::get('/', [TipoComportamientoController::class, 'index'])->name('index');
-        Route::get('/crear', [TipoComportamientoController::class, 'create'])->name('create');
-        Route::post('/', [TipoComportamientoController::class, 'store'])->name('store');
-        Route::get('/{tipo}/editar', [TipoComportamientoController::class, 'edit'])->name('edit');
-        Route::put('/{tipo}', [TipoComportamientoController::class, 'update'])->name('update');
-        Route::delete('/{tipo}', [TipoComportamientoController::class, 'destroy'])->name('destroy');
-    });
+    // Route::prefix('tipos-comportamiento')->name('tipo-comportamiento.')->middleware('user.type:docente')->group(function () {
+    //     Route::get('/', [TipoComportamientoController::class, 'index'])->name('index');
+    //     Route::get('/crear', [TipoComportamientoController::class, 'create'])->name('create');
+    //     Route::post('/', [TipoComportamientoController::class, 'store'])->name('store');
+    //     Route::get('/{tipo}/editar', [TipoComportamientoController::class, 'edit'])->name('edit');
+    //     Route::put('/{tipo}', [TipoComportamientoController::class, 'update'])->name('update');
+    //     Route::delete('/{tipo}', [TipoComportamientoController::class, 'destroy'])->name('destroy');
+    // });
 
     // ==========================================
     // GESTIÓN DE MISIONES
@@ -763,3 +763,80 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+// ==========================================
+// RUTAS ADICIONALES DE AUTENTICACIÓN
+// ==========================================
+
+// API para verificar disponibilidad de email
+Route::post('/auth/check-email', [AuthController::class, 'checkEmail'])
+    ->middleware('guest')
+    ->name('auth.check-email');
+
+// Recuperación de contraseña
+Route::middleware('guest')->group(function () {
+    Route::get('/forgot-password', function () {
+        return Inertia::render('Auth/ForgotPassword');
+    })->name('password.request');
+    
+    Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetCode'])
+        ->name('password.email');
+    
+    Route::get('/reset-password', function (Request $request) {
+        return Inertia::render('Auth/ResetPassword', [
+            'email' => $request->email
+        ]);
+    })->name('password.reset');
+    
+    Route::post('/reset-password', [AuthController::class, 'resetPasswordWithCode'])
+        ->name('password.update');
+});
+
+// ==========================================
+// APIs PROTEGIDAS
+// ==========================================
+Route::middleware(['auth'])->group(function () {
+    
+    // API para validar sesión
+    Route::get('/api/validate-session', [AuthController::class, 'validateSession'])
+        ->name('api.validate-session');
+    
+    // API para notificaciones del dashboard
+    Route::get('/api/notificaciones', [DashboardController::class, 'notificaciones'])
+        ->name('api.notificaciones');
+    
+    Route::post('/api/notificaciones/{id}/marcar-leida', [DashboardController::class, 'marcarNotificacionLeida'])
+        ->name('api.notificaciones.marcar-leida');
+    
+    // API para estadísticas rápidas
+    Route::get('/api/dashboard/stats', function () {
+        $user = auth()->user();
+        
+        if ($user->esDocente()) {
+            $docente = $user->docente;
+            return response()->json([
+                'total_clases' => $docente->clases()->count(),
+                'total_estudiantes' => DB::table('estudiante_clase')
+                    ->whereIn('id_clase', $docente->clases()->pluck('id'))
+                    ->where('activo', true)
+                    ->distinct('id_estudiante')
+                    ->count(),
+            ]);
+        } else {
+            $estudiante = $user->estudiante;
+            return response()->json([
+                'total_clases' => $estudiante->clases()->where('estudiante_clase.activo', true)->count(),
+                'experiencia_total' => $estudiante->personajes()->sum('experiencia'),
+            ]);
+        }
+    })->name('api.dashboard.stats');
+});
+
+// ==========================================
+// RUTAS DE PERFILES
+// ==========================================
+Route::middleware(['auth'])->group(function () {
+    Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
+    Route::patch('/perfil/informacion', [PerfilController::class, 'updateInformacion'])->name('perfil.update-informacion');
+    Route::patch('/perfil/password', [PerfilController::class, 'updatePassword'])->name('perfil.update-password');
+    Route::delete('/perfil', [PerfilController::class, 'destroy'])->name('perfil.destroy');
+});

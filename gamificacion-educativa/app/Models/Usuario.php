@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 class Usuario extends Authenticatable
 {
@@ -18,6 +19,7 @@ class Usuario extends Authenticatable
         'salt',
         'id_tipo_usuario',
         'id_estado',
+        'avatar', // Agregado para manejar avatares
         'ultimo_acceso',
         'eliminado'
     ];
@@ -32,6 +34,10 @@ class Usuario extends Authenticatable
         'ultimo_acceso' => 'datetime',
         'eliminado' => 'boolean',
         'email_verified_at' => 'datetime',
+    ];
+
+    protected $appends = [
+        'avatar_url', // Para que siempre esté disponible el accessor
     ];
 
     // Relaciones
@@ -55,15 +61,26 @@ class Usuario extends Authenticatable
         return $this->hasOne(Docente::class, 'id_usuario');
     }
 
+    // Accessors
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar) {
+            return Storage::url($this->avatar);
+        }
+        return asset('images/default-avatar.png');
+    }
+
     // Métodos auxiliares
     public function esEstudiante()
     {
-        return $this->id_tipo_usuario === 1;
+        // Usar relación con tipoUsuario para mayor consistencia
+        return $this->tipoUsuario && $this->tipoUsuario->nombre === 'estudiante';
     }
 
     public function esDocente()
     {
-        return $this->id_tipo_usuario === 2;
+        // Usar relación con tipoUsuario para mayor consistencia
+        return $this->tipoUsuario && $this->tipoUsuario->nombre === 'docente';
     }
 
     public function estaActivo()
@@ -81,21 +98,32 @@ class Usuario extends Authenticatable
     {
         return $this->correo;
     }
-    public function getAvatarUrlAttribute()
+
+    // Método alternativo usando IDs (más eficiente para consultas)
+    public function esEstudiantePorId()
     {
-        if ($this->avatar) {
-            return Storage::url($this->avatar);
-        }
-        return asset('images/default-avatar.png');
+        return $this->id_tipo_usuario === 1;
     }
 
-    public function esDocente()
+    public function esDocentePorId()
     {
-        return $this->tipoUsuario->nombre === 'docente';
+        return $this->id_tipo_usuario === 2;
     }
 
-    public function esEstudiante()
+    // Scopes útiles
+    public function scopeActivos($query)
     {
-        return $this->tipoUsuario->nombre === 'estudiante';
+        return $query->where('id_estado', 1)
+                    ->where('eliminado', false);
+    }
+
+    public function scopeDocentes($query)
+    {
+        return $query->where('id_tipo_usuario', 2);
+    }
+
+    public function scopeEstudiantes($query)
+    {
+        return $query->where('id_tipo_usuario', 1);
     }
 }
