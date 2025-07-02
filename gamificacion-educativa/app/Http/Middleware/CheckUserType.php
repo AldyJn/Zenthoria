@@ -43,4 +43,5 @@ class CheckUserType
 
         return $next($request);
     }
+    
 }
