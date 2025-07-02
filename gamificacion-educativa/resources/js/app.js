@@ -5,7 +5,7 @@ import '../css/app.css';
 import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/vue.m';
+// import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/vue.m';
 
 // Vuetify
 import 'vuetify/styles';
@@ -108,7 +108,7 @@ createInertiaApp({
             .use(plugin)
             .use(pinia)
             .use(vuetify)
-            .use(ZiggyVue, Ziggy)
+            // .use(ZiggyVue, Ziggy)
             .mount(el);
     },
     progress: {

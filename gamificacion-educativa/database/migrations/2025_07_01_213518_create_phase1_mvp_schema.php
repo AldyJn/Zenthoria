@@ -1,4 +1,6 @@
 <?php
+// database/migrations/2025_07_01_213518_create_phase1_mvp_schema.php
+// VERSIÓN COMPLETA Y CORREGIDA CON COLUMNAS DE AVATAR
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -27,6 +29,7 @@ return new class extends Migration
             $table->id();
             $table->string('nombre', 100);
             $table->string('correo', 100)->unique();
+            $table->string('avatar')->nullable(); // ✅ COLUMNA AVATAR AGREGADA
             $table->string('contraseña_hash', 255);
             $table->string('salt', 128);
             $table->foreignId('id_tipo_usuario')->constrained('tipo_usuario');
@@ -58,6 +61,8 @@ return new class extends Migration
             $table->id();
             $table->string('nombre', 50)->unique();
             $table->text('descripcion')->nullable();
+            $table->json('habilidades_especiales')->nullable();
+            $table->json('stats_base')->nullable();
             $table->string('imagen_url')->nullable();
             $table->timestamps();
         });
@@ -66,7 +71,8 @@ return new class extends Migration
         Schema::create('nivel_experiencia', function (Blueprint $table) {
             $table->integer('nivel')->primary(); // Clave primaria no autoincremental
             $table->integer('experiencia_requerida');
-            $table->json('bonificaciones')->nullable();
+            $table->json('recompensas')->nullable();
+            $table->string('titulo_desbloqueado')->nullable();
             $table->timestamps();
         });
 
@@ -86,13 +92,15 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('clase_estudiante', function (Blueprint $table) {
+        Schema::create('inscripcion_clase', function (Blueprint $table) {
             $table->id();
             $table->foreignId('id_clase')->constrained('clase');
             $table->foreignId('id_estudiante')->constrained('estudiante');
             $table->timestamp('fecha_ingreso')->useCurrent();
             $table->boolean('activo')->default(true);
             $table->timestamps();
+            
+            $table->unique(['id_clase', 'id_estudiante']);
         });
 
         // Tablas de dinámica de clase
@@ -100,7 +108,9 @@ return new class extends Migration
             $table->id();
             $table->string('nombre', 50)->unique();
             $table->text('descripcion')->nullable();
-            $table->integer('valor_puntos')->default(0);
+            $table->integer('puntos')->default(0);
+            $table->enum('tipo', ['positivo', 'negativo'])->default('positivo');
+            $table->string('icono', 10)->nullable();
             $table->timestamps();
         });
 
@@ -145,6 +155,7 @@ return new class extends Migration
             $table->integer('nivel')->default(1);
             $table->integer('experiencia')->default(0);
             $table->string('avatar_base', 50)->default('guerrero');
+            $table->string('imagen_personalizada')->nullable(); // ✅ COLUMNA IMAGEN AGREGADA
             $table->timestamps();
             
             // Relación con niveles de experiencia
@@ -178,30 +189,14 @@ return new class extends Migration
             $table->foreignId('id_actividad')->constrained('actividad');
             $table->foreignId('id_estudiante')->constrained('estudiante');
             $table->string('archivo')->nullable();
+            $table->text('descripcion_entrega')->nullable();
             $table->timestamp('fecha_entrega')->useCurrent();
             $table->decimal('nota', 5, 2)->nullable();
-            $table->text('comentario')->nullable();
+            $table->text('comentario_docente')->nullable();
             $table->timestamps();
         });
 
-        // Tablas de reportes
-        Schema::create('estadistica_clase', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('id_clase')->constrained('clase');
-            $table->decimal('promedio_nivel', 5, 2)->nullable();
-            $table->decimal('promedio_participacion', 5, 2)->nullable();
-            $table->jsonb('distribucion_niveles')->nullable();
-            $table->timestamps();
-        });
-
-        Schema::create('estadistica_personaje', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('id_personaje')->constrained('personaje');
-            $table->integer('misiones_completadas')->default(0);
-            $table->integer('actividades_completadas')->default(0);
-            $table->timestamps();
-        });
-       // Tabla de sesiones de clase
+        // Tabla de sesiones de clase
         Schema::create('sesion_clase', function (Blueprint $table) {
             $table->id();
             $table->foreignId('id_clase')->constrained('clase');
@@ -297,9 +292,9 @@ return new class extends Migration
             $table->string('nombre', 100);
             $table->text('descripcion');
             $table->string('imagen_url')->nullable();
-            $table->string('tipo', 50); // 'nivel', 'actividades_completadas', 'asistencia_perfecta', etc.
-            $table->json('criterio')->nullable(); // criterios específicos para obtener el badge
-            $table->integer('valor_requerido'); // valor numérico requerido
+            $table->string('tipo', 50); // 'academico', 'social', 'asistencia', 'especial'
+            $table->json('criterios')->nullable(); // criterios específicos para obtener el badge
+            $table->string('rareza', 20)->default('comun'); // 'comun', 'raro', 'epico', 'legendario'
             $table->boolean('activo')->default(true);
             $table->timestamps();
         });
@@ -325,36 +320,42 @@ return new class extends Migration
         Schema::create('configuracion_clase', function (Blueprint $table) {
             $table->id();
             $table->foreignId('id_clase')->constrained('clase');
-            $table->string('clave', 100); // 'experiencia_por_participacion', 'monedas_por_actividad', etc.
-            $table->text('valor'); // valor de la configuración
-            $table->string('tipo', 20)->default('string'); // 'string', 'integer', 'boolean', 'json'
+            $table->boolean('permitir_personajes')->default(true);
+            $table->boolean('permitir_tienda')->default(true);
+            $table->boolean('permitir_misiones')->default(true);
+            $table->boolean('sistema_puntos_activo')->default(true);
+            $table->boolean('sistema_badges_activo')->default(true);
+            $table->boolean('moneda_virtual_activa')->default(true);
+            $table->json('configuracion_puntos')->nullable();
+            $table->json('configuracion_economia')->nullable();
+            $table->json('limites_sistema')->nullable();
             $table->timestamps();
-            
-            $table->unique(['id_clase', 'clave']);
+        });
+
+        // Tablas de reportes
+        Schema::create('estadistica_clase', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('id_clase')->constrained('clase');
+            $table->decimal('promedio_nivel', 5, 2)->nullable();
+            $table->decimal('promedio_participacion', 5, 2)->nullable();
+            $table->json('distribucion_niveles')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('estadistica_personaje', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('id_personaje')->constrained('personaje');
+            $table->integer('misiones_completadas')->default(0);
+            $table->integer('actividades_completadas')->default(0);
+            $table->timestamps();
         });
     }
+
     public function down()
     {
-        // Eliminar en orden inverso
+        // Eliminar en orden inverso para respetar las llaves foráneas
         Schema::dropIfExists('estadistica_personaje');
         Schema::dropIfExists('estadistica_clase');
-        Schema::dropIfExists('entrega_actividad');
-        Schema::dropIfExists('actividad');
-        Schema::dropIfExists('tipo_actividad');
-        Schema::dropIfExists('personaje');
-        Schema::dropIfExists('asistencia');
-        Schema::dropIfExists('registro_comportamiento');
-        Schema::dropIfExists('tipo_comportamiento');
-        Schema::dropIfExists('estado_tarea');
-        Schema::dropIfExists('clase_estudiante');
-        Schema::dropIfExists('clase');
-        Schema::dropIfExists('nivel_experiencia');
-        Schema::dropIfExists('clase_rpg');
-        Schema::dropIfExists('docente');
-        Schema::dropIfExists('estudiante');
-        Schema::dropIfExists('usuario');
-        Schema::dropIfExists('estado_usuario');
-        Schema::dropIfExists('tipo_usuario');
         Schema::dropIfExists('configuracion_clase');
         Schema::dropIfExists('estudiante_badge');
         Schema::dropIfExists('badge');
@@ -363,17 +364,37 @@ return new class extends Migration
         Schema::dropIfExists('transaccion_moneda');
         Schema::dropIfExists('progreso_mision');
         
+        // Eliminar columna id_mision de actividad antes de eliminar mision
         Schema::table('actividad', function (Blueprint $table) {
             $table->dropForeign(['id_mision']);
             $table->dropColumn('id_mision');
         });
-
+        
+        Schema::dropIfExists('mision');
+        
+        // Eliminar columna id_sesion de asistencia antes de eliminar sesion_clase
         Schema::table('asistencia', function (Blueprint $table) {
             $table->dropForeign(['id_sesion']);
             $table->dropColumn('id_sesion');
         });
-
-        Schema::dropIfExists('mision');
+        
         Schema::dropIfExists('sesion_clase');
+        Schema::dropIfExists('entrega_actividad');
+        Schema::dropIfExists('actividad');
+        Schema::dropIfExists('tipo_actividad');
+        Schema::dropIfExists('personaje');
+        Schema::dropIfExists('estado_tarea');
+        Schema::dropIfExists('asistencia');
+        Schema::dropIfExists('registro_comportamiento');
+        Schema::dropIfExists('tipo_comportamiento');
+        Schema::dropIfExists('inscripcion_clase');
+        Schema::dropIfExists('clase');
+        Schema::dropIfExists('nivel_experiencia');
+        Schema::dropIfExists('clase_rpg');
+        Schema::dropIfExists('docente');
+        Schema::dropIfExists('estudiante');
+        Schema::dropIfExists('usuario');
+        Schema::dropIfExists('estado_usuario');
+        Schema::dropIfExists('tipo_usuario');
     }
 };
