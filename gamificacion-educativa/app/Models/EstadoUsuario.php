@@ -1,4 +1,5 @@
 <?php
+// app/Models/EstadoUsuario.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,11 +13,22 @@ class EstadoUsuario extends Model
 
     protected $fillable = [
         'nombre',
-        'descripcion'
+        'descripcion',
     ];
 
+    /**
+     * Relación con usuarios
+     */
     public function usuarios()
     {
         return $this->hasMany(Usuario::class, 'id_estado');
+    }
+
+    /**
+     * Scope para estado activo
+     */
+    public function scopeActivo($query)
+    {
+        return $query->where('nombre', 'activo');
     }
 }

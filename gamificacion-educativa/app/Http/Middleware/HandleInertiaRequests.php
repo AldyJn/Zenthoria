@@ -1,5 +1,4 @@
 <?php
-
 // app/Http/Middleware/HandleInertiaRequests.php
 namespace App\Http\Middleware;
 
@@ -36,14 +35,13 @@ class HandleInertiaRequests extends Middleware
                     'id' => $request->user()->id,
                     'nombre' => $request->user()->nombre,
                     'correo' => $request->user()->correo,
-                    'tipo_usuario' => $request->user()->tipoUsuario->nombre ?? null,
-                    'avatar' => $request->user()->avatar,
-                    'avatar_url' => $request->user()->avatar_url,
-                    'es_docente' => $request->user()->esDocente(),
-                    'es_estudiante' => $request->user()->esEstudiante(),
-                    'esta_activo' => $request->user()->estaActivo(),
-                    'ultimo_acceso' => $request->user()->ultimo_acceso,
-                    'perfil' => $this->getUserProfile($request->user()),
+                    // Hacer estas llamadas más seguras
+                    'tipo_usuario' => optional($request->user()->tipoUsuario)->nombre,
+                    'avatar' => $request->user()->avatar ?? null,
+                    'ultimo_acceso' => $request->user()->ultimo_acceso ?? null,
+                    // Verificar si los métodos existen antes de llamarlos
+                    'es_docente' => method_exists($request->user(), 'esDocente') ? $request->user()->esDocente() : false,
+                    'es_estudiante' => method_exists($request->user(), 'esEstudiante') ? $request->user()->esEstudiante() : false,
                 ] : null,
             ],
             'flash' => [
@@ -52,47 +50,11 @@ class HandleInertiaRequests extends Middleware
                 'warning' => fn () => $request->session()->get('warning'),
                 'info' => fn () => $request->session()->get('info'),
             ],
-            'errors' => fn () => $request->session()->get('errors') 
-                ? $request->session()->get('errors')->getBag('default')->getMessages() 
-                : (object) [],
-            'app' => [
-                'name' => config('app.name'),
-                'url' => config('app.url'),
-                'locale' => app()->getLocale(),
-                'timezone' => config('app.timezone'),
+            // Configuración de la app
+            'config' => [
+                'app_name' => config('app.name'),
+                'app_url' => config('app.url'),
             ],
-            'ziggy' => function () use ($request) {
-                return [
-                    'location' => $request->url(),
-                    'query' => $request->query(),
-                ];
-            },
         ]);
-    }
-
-    /**
-     * Obtener el perfil del usuario (docente o estudiante)
-     */
-    private function getUserProfile($user)
-    {
-        if (!$user) {
-            return null;
-        }
-
-        if ($user->esDocente()) {
-            return $user->docente()->with(['clases' => function ($query) {
-                $query->select('id', 'nombre', 'codigo_acceso', 'id_docente')
-                      ->where('activa', true);
-            }])->first();
-        }
-
-        if ($user->esEstudiante()) {
-            return $user->estudiante()->with(['personajes' => function ($query) {
-                $query->select('id', 'nombre', 'nivel', 'experiencia', 'id_estudiante', 'id_clase')
-                      ->with(['clase:id,nombre']);
-            }])->first();
-        }
-
-        return null;
     }
 }

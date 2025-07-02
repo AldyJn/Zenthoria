@@ -1,3 +1,349 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Bootstrap se carga desde CDN */
+
+/* Custom global styles */
+body {
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Custom classes para gamificación */
+.experience-bar {
+    background: linear-gradient(90deg, #FF9800, #FFC107);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.level-badge {
+    background: linear-gradient(135deg, #FFD700, #FFA000);
+    color: #000;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.875rem;
+}
+
+.xp-text {
+    color: #FF9800;
+    font-weight: bold;
+}
+
+/* Personaje classes */
+.personaje-guerrero {
+    color: #E53935;
+}
+
+.personaje-mago {
+    color: #7B1FA2;
+}
+
+.personaje-arquero {
+    color: #388E3C;
+}
+
+/* Auth pages specific styles */
+.auth-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.logo-emblem {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #fff, #f8f9fa);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #667eea;
+    font-size: 2.5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { 
+        transform: translateY(0px); 
+    }
+    50% { 
+        transform: translateY(-10px); 
+    }
+}
+
+/* Custom card styles */
+.game-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border-radius: 12px;
+}
+
+.game-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 24px;
+    border-radius: 12px;
+}
+
+/* Custom button styles */
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 1rem;
+}
+
+/* Form styles */
+.form-control {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    padding: 12px 16px;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-control-lg {
+    padding: 12px 16px;
+    font-size: 1rem;
+}
+
+/* Card styles */
+.card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* Navbar styles */
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Progress bar styles */
+.progress {
+    height: 8px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.progress-bar {
+    border-radius: 4px;
+}
+
+/* Badge styles */
+.badge {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+/* Alert styles */
+.alert {
+    border-radius: 8px;
+    border: none;
+    padding: 16px 20px;
+}
+
+.alert-success {
+    background-color: #d1edff;
+    color: #0c5460;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* Custom utilities */
+.text-white-50 {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.bg-purple {
+    background-color: #7B1FA2 !important;
+}
+
+/* Loading states */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Animation classes */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+    transition: all 0.3s ease;
+}
+
+.slide-up-enter-from {
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+.slide-up-leave-to {
+    opacity: 0;
+    transform: translateY(-30px);
+}
+
+/* Status colors */
+.status-active {
+    color: #4CAF50;
+}
+
+.status-inactive {
+    color: #F44336;
+}
+
+.status-pending {
+    color: #FF9800;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Footer styles */
+footer {
+    margin-top: auto;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+    .mobile-hidden {
+        display: none !important;
+    }
+    
+    .logo-emblem {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+    }
+    
+    .display-3 {
+        font-size: 2rem;
+    }
+    
+    .h4 {
+        font-size: 1.1rem;
+    }
+    
+    .btn-lg {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn-group-vertical .btn {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .navbar,
+    .btn,
+    footer {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+}
+
+/* Dark mode support (opcional) */
+@media (prefers-color-scheme: dark) {
+    .card {
+        background-color: #2d3748;
+        color: #e2e8f0;
+    }
+    
+    .form-control {
+        background-color: #4a5568;
+        border-color: #718096;
+        color: #e2e8f0;
+    }
+    
+    .form-control:focus {
+        background-color: #4a5568;
+        border-color: #667eea;
+        color: #e2e8f0;
+    }
+}

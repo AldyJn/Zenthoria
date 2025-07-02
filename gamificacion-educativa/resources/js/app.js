@@ -1,118 +1,141 @@
-// resources/js/app.js
 import './bootstrap';
-import '../css/app.css';
 
-import { createApp, h } from 'vue';
-import { createInertiaApp } from '@inertiajs/vue3';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-// import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/vue.m';
+// Simple JavaScript utilities for the Blade application
 
-// Vuetify
-import 'vuetify/styles';
-import { createVuetify } from 'vuetify';
-import * as components from 'vuetify/components';
-import * as directives from 'vuetify/directives';
-import { aliases, mdi } from 'vuetify/iconsets/mdi';
-import '@mdi/font/css/materialdesignicons.css';
-
-// Pinia
-import { createPinia } from 'pinia';
-
-const appName = window.document.getElementsByTagName('title')[0]?.innerText || 'EduApp Gamificada';
-
-// Configuración de Vuetify
-const vuetify = createVuetify({
-    components,
-    directives,
-    icons: {
-        defaultSet: 'mdi',
-        aliases,
-        sets: {
-            mdi,
-        },
-    },
-    theme: {
-        defaultTheme: 'light',
-        themes: {
-            light: {
-                dark: false,
-                colors: {
-                    primary: '#1976D2',
-                    secondary: '#424242',
-                    accent: '#82B1FF',
-                    error: '#FF5252',
-                    info: '#2196F3',
-                    success: '#4CAF50',
-                    warning: '#FFC107',
-                    // Colores custom para gamificación
-                    experience: '#FF9800',
-                    gold: '#FFD700',
-                    silver: '#C0C0C0',
-                    bronze: '#CD7F32',
-                    guerrero: '#E53935',
-                    mago: '#7B1FA2',
-                    arquero: '#388E3C',
-                }
-            },
-            dark: {
-                dark: true,
-                colors: {
-                    primary: '#2196F3',
-                    secondary: '#424242',
-                    accent: '#FF4081',
-                    error: '#FF5252',
-                    info: '#2196F3',
-                    success: '#4CAF50',
-                    warning: '#FB8C00',
-                    // Colores custom para modo oscuro
-                    experience: '#FF9800',
-                    gold: '#FFD700',
-                    silver: '#C0C0C0',
-                    bronze: '#CD7F32',
-                    guerrero: '#F44336',
-                    mago: '#9C27B0',
-                    arquero: '#4CAF50',
-                }
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide alerts after 5 seconds
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            if (alert.classList.contains('fade')) {
+                alert.classList.remove('show');
+            } else {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
             }
+        }, 5000);
+    });
+
+    // Add loading state to forms on submit
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin me-2"></i>Procesando...';
+            }
+        });
+    });
+
+    // Add hover effects to cards
+    const gameCards = document.querySelectorAll('.game-card');
+    gameCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Simple tooltip implementation
+    const tooltips = document.querySelectorAll('[data-tooltip]');
+    tooltips.forEach(element => {
+        element.addEventListener('mouseenter', function() {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'custom-tooltip';
+            tooltip.innerText = this.getAttribute('data-tooltip');
+            document.body.appendChild(tooltip);
+            
+            const rect = this.getBoundingClientRect();
+            tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+            tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
+        });
+        
+        element.addEventListener('mouseleave', function() {
+            const tooltip = document.querySelector('.custom-tooltip');
+            if (tooltip) {
+                tooltip.remove();
+            }
+        });
+    });
+});
+
+// CSS for custom tooltip
+const style = document.createElement('style');
+style.textContent = `
+    .custom-tooltip {
+        position: absolute;
+        background: #333;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        z-index: 1000;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+    
+    .custom-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+    }
+    
+    .mdi-spin {
+        animation: mdi-spin 1s infinite linear;
+    }
+    
+    @keyframes mdi-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+
+// Export functions for global use
+window.EduApp = {
+    // Show notification
+    showNotification: function(message, type = 'success') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.minWidth = '300px';
+        
+        alertDiv.innerHTML = `
+            <i class="mdi mdi-${type === 'success' ? 'check-circle' : 'alert-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.classList.remove('show');
+            setTimeout(() => alertDiv.remove(), 300);
+        }, 5000);
+    },
+    
+    // Confirm dialog
+    confirm: function(message, callback) {
+        if (confirm(message)) {
+            callback();
         }
     },
-    defaults: {
-        VCard: {
-            elevation: 2,
-        },
-        VBtn: {
-            elevation: 2,
-        },
-        VTextField: {
-            variant: 'outlined',
-            density: 'comfortable',
-        },
-        VSelect: {
-            variant: 'outlined',
-            density: 'comfortable',
-        },
-        VTextarea: {
-            variant: 'outlined',
-            density: 'comfortable',
-        },
+    
+    // Copy to clipboard
+    copyToClipboard: function(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            this.showNotification('Copiado al portapapeles');
+        });
     }
-});
-
-const pinia = createPinia();
-
-createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
-    resolve: (name) => resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
-    setup({ el, App, props, plugin }) {
-        return createApp({ render: () => h(App, props) })
-            .use(plugin)
-            .use(pinia)
-            .use(vuetify)
-            // .use(ZiggyVue, Ziggy)
-            .mount(el);
-    },
-    progress: {
-        color: '#4B5563',
-        showSpinner: true,
-    },
-});
+};
