@@ -48,4 +48,27 @@ class Docente extends Model
             ->unique('id')
             ->count();
     }
+
+    public function totalEstudiantesActivos()
+    {
+        $totalActivos = 0;
+        foreach ($this->clasesActivas as $clase) {
+            $totalActivos += $clase->estudiantesActivos()->count();
+        }
+        return $totalActivos;
+    }
+
+    public function estudiantesPorClase()
+    {
+        return $this->clases()->withCount(['estudiantes' => function ($query) {
+            $query->wherePivot('activo', true);
+        }])->get();
+    }
+
+    public function inscripcionesPorClase()
+    {
+        return $this->clases()->with(['inscripciones' => function ($query) {
+            $query->activas();
+        }])->get();
+    }
 }

@@ -50,4 +50,49 @@ class InscripcionClase extends Model
     {
         return $query->where('id_estudiante', $estudianteId);
     }
+
+    public function scopeEntreFechas($query, $fechaInicio, $fechaFin)
+    {
+        return $query->whereBetween('fecha_ingreso', [$fechaInicio, $fechaFin]);
+    }
+
+    // Métodos auxiliares
+    public function activar()
+    {
+        $this->update(['activo' => true]);
+    }
+
+    public function desactivar()
+    {
+        $this->update(['activo' => false]);
+    }
+
+    public function estaActiva()
+    {
+        return $this->activo;
+    }
+
+    public function diasInscrito()
+    {
+        return $this->fecha_ingreso->diffInDays(now());
+    }
+
+    // Método estático para crear inscripción
+    public static function inscribir($claseId, $estudianteId)
+    {
+        return static::create([
+            'id_clase' => $claseId,
+            'id_estudiante' => $estudianteId,
+            'fecha_ingreso' => now(),
+            'activo' => true
+        ]);
+    }
+
+    // Verificar si ya existe una inscripción
+    public static function yaEstaInscrito($claseId, $estudianteId)
+    {
+        return static::where('id_clase', $claseId)
+                    ->where('id_estudiante', $estudianteId)
+                    ->exists();
+    }
 }

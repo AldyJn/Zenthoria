@@ -28,7 +28,7 @@ class Estudiante extends Model
     {
         return $this->belongsToMany(
             Clase::class, 
-            'clase_estudiante', 
+            'inscripcion_clase', // Corregido: cambiado de 'clase_estudiante' a 'inscripcion_clase'
             'id_estudiante', 
             'id_clase'
         )->withPivot('fecha_ingreso', 'activo')->withTimestamps();
@@ -54,6 +54,11 @@ class Estudiante extends Model
         return $this->hasMany(EntregaActividad::class, 'id_estudiante');
     }
 
+    public function inscripciones()
+    {
+        return $this->hasMany(InscripcionClase::class, 'id_estudiante');
+    }
+
     // Métodos auxiliares
     public function personajeEnClase($claseId)
     {
@@ -63,5 +68,10 @@ class Estudiante extends Model
     public function clasesActivas()
     {
         return $this->clases()->wherePivot('activo', true);
+    }
+
+    public function inscripcionEnClase($claseId)
+    {
+        return $this->inscripciones()->where('id_clase', $claseId)->first();
     }
 }

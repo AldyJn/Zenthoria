@@ -53,7 +53,7 @@ class Clase extends Model
     {
         return $this->belongsToMany(
             Estudiante::class, 
-            'clase_estudiante', 
+            'inscripcion_clase', // Corregido: cambiado de 'clase_estudiante' a 'inscripcion_clase'
             'id_clase', 
             'id_estudiante'
         )->withPivot('fecha_ingreso', 'activo')->withTimestamps();
@@ -84,6 +84,11 @@ class Clase extends Model
         return $this->hasOne(EstadisticaClase::class, 'id_clase');
     }
 
+    public function inscripciones()
+    {
+        return $this->hasMany(InscripcionClase::class, 'id_clase');
+    }
+
     // Métodos auxiliares
     public static function generarCodigoUnico()
     {
@@ -107,6 +112,17 @@ class Clase extends Model
         ]);
     }
 
+    public function inscribirEstudiante($estudianteId)
+    {
+        // Alternativa usando el modelo InscripcionClase
+        return InscripcionClase::create([
+            'id_clase' => $this->id,
+            'id_estudiante' => $estudianteId,
+            'fecha_ingreso' => now(),
+            'activo' => true
+        ]);
+    }
+
     public function promedioNivel()
     {
         return $this->personajes()->avg('nivel') ?? 0;
@@ -115,5 +131,15 @@ class Clase extends Model
     public function totalExperiencia()
     {
         return $this->personajes()->sum('experiencia');
+    }
+
+    public function totalInscripciones()
+    {
+        return $this->inscripciones()->count();
+    }
+
+    public function inscripcionesActivas()
+    {
+        return $this->inscripciones()->activas();
     }
 }
