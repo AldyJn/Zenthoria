@@ -750,6 +750,16 @@ Route::fallback(function () {
             ['text' => 'Ver mis Clases', 'url' => route('clases.index')],
             ['text' => 'Contactar Soporte', 'url' => route('contacto')],
         ]
+        
     ]);
+});
+Route::middleware(['auth'])->group(function () {
+    // Rutas de upload de imágenes
+    Route::prefix('api')->name('api.')->group(function () {
+        Route::post('/upload/avatar', [App\Http\Controllers\UploadController::class, 'uploadAvatar'])->name('upload.avatar');
+        Route::delete('/upload/avatar', [App\Http\Controllers\UploadController::class, 'deleteAvatar'])->name('delete.avatar');
+        Route::post('/upload/personaje/{personaje}/imagen', [App\Http\Controllers\UploadController::class, 'uploadPersonajeImagen'])->name('upload.personaje.imagen');
+        Route::delete('/upload/personaje/{personaje}/imagen', [App\Http\Controllers\UploadController::class, 'deletePersonajeImagen'])->name('delete.personaje.imagen');
+    });
 });
 

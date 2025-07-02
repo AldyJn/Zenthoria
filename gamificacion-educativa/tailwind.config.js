@@ -1,4 +1,9 @@
-import defaultTheme from 'tailwindcss/defaultTheme';
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Importar estilos de Destiny 2 */
+@import './destiny-global.css';
 
 /** @type {import('tailwindcss').Config} */
 export default {

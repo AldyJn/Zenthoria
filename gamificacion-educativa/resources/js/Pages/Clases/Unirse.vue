@@ -4,163 +4,176 @@
 
   <AuthenticatedLayout>
     <template #header>
-      <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-        Unirse a una Clase
-      </h2>
+      <h2 class="text-h4 font-weight-bold">Unirse a una Clase</h2>
     </template>
 
-    <div class="py-12">
-      <div class="max-w-md mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-          <div class="p-6 bg-white">
-            <!-- Instrucciones -->
-            <div class="text-center mb-6">
-              <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                <UserPlusIcon class="h-6 w-6 text-green-600" />
-              </div>
-              <h3 class="mt-2 text-lg font-medium text-gray-900">Unirse a una Clase</h3>
-              <p class="mt-1 text-sm text-gray-500">
-                Ingresa el código que te proporcionó tu profesor para unirte a su clase.
+    <v-container>
+      <v-row justify="center">
+        <v-col cols="12" md="6" lg="4">
+          <v-card>
+            <!-- Header -->
+            <v-card-title class="text-center pa-6">
+              <v-avatar size="80" color="success" class="mb-4">
+                <v-icon size="40">mdi-account-plus</v-icon>
+              </v-avatar>
+              <h3 class="text-h5 mb-2">Unirse a una Clase</h3>
+              <p class="text-body-2 text-medium-emphasis">
+                Ingresa el código que te proporcionó tu profesor
               </p>
-            </div>
+            </v-card-title>
 
-            <!-- Formulario -->
-            <form @submit.prevent="submit" class="space-y-6">
-              <!-- Código de invitación -->
-              <div>
-                <label for="codigo" class="block text-sm font-medium text-gray-700">
-                  Código de Clase *
-                </label>
-                <div class="mt-1 relative">
-                  <input
-                    id="codigo"
-                    v-model="form.codigo"
-                    type="text"
-                    class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 text-center text-lg font-mono tracking-wider uppercase"
-                    placeholder="ABC123"
-                    maxlength="6"
-                    required
-                    @input="form.codigo = $event.target.value.toUpperCase()"
-                  />
-                  <div v-if="verificando" class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
-                  </div>
-                </div>
-                <div v-if="form.errors.codigo" class="mt-2 text-sm text-red-600">
-                  {{ form.errors.codigo }}
-                </div>
-                <p class="mt-2 text-xs text-gray-500">
+            <v-card-text>
+              <v-form @submit.prevent="submit">
+                <!-- Código de invitación -->
+                <v-text-field
+                  v-model="form.codigo"
+                  label="Código de Clase *"
+                  placeholder="ABC123"
+                  prepend-icon="mdi-key"
+                  :error-messages="form.errors.codigo"
+                  variant="outlined"
+                  maxlength="6"
+                  class="text-center"
+                  style="font-family: monospace; font-size: 1.2em; letter-spacing: 0.2em"
+                  :loading="verificando"
+                  @input="form.codigo = $event.target.value.toUpperCase()"
+                  required
+                >
+                  <template v-slot:append-inner>
+                    <v-progress-circular
+                      v-if="verificando"
+                      indeterminate
+                      size="20"
+                      width="2"
+                    ></v-progress-circular>
+                    <v-icon
+                      v-else-if="claseEncontrada"
+                      color="success"
+                    >
+                      mdi-check-circle
+                    </v-icon>
+                  </template>
+                </v-text-field>
+
+                <v-alert
+                  type="info"
+                  variant="tonal"
+                  class="mb-4"
+                >
                   El código debe tener 6 caracteres (letras y números)
-                </p>
-              </div>
+                </v-alert>
 
-              <!-- Vista previa de la clase -->
-              <div v-if="claseEncontrada && !form.errors.codigo" 
-                   class="border border-green-200 rounded-lg p-4 bg-green-50">
-                <div class="flex items-center">
-                  <CheckCircleIcon class="h-5 w-5 text-green-400" />
-                  <h4 class="ml-2 text-sm font-medium text-green-800">Clase encontrada</h4>
-                </div>
-                <div class="mt-2 text-sm text-green-700">
-                  <p><strong>{{ claseEncontrada.nombre }}</strong></p>
-                  <p>{{ claseEncontrada.grado }} - {{ claseEncontrada.seccion }}</p>
-                  <p class="text-xs">{{ claseEncontrada.descripcion }}</p>
-                </div>
-              </div>
+                <!-- Vista previa de la clase -->
+                <v-card
+                  v-if="claseEncontrada && !form.errors.codigo"
+                  variant="tonal"
+                  color="success"
+                  class="mb-4"
+                >
+                  <v-card-text>
+                    <div class="d-flex align-center mb-2">
+                      <v-icon class="mr-2" color="success">mdi-check-circle</v-icon>
+                      <span class="font-weight-bold">Clase encontrada</span>
+                    </div>
+                    <h4 class="text-h6">{{ claseEncontrada.nombre }}</h4>
+                    <p class="text-body-2">{{ claseEncontrada.grado }} - {{ claseEncontrada.seccion }}</p>
+                    <p class="text-caption">{{ claseEncontrada.descripcion }}</p>
+                  </v-card-text>
+                </v-card>
 
-              <!-- Selección de personaje -->
-              <div v-if="claseEncontrada && claseEncontrada.configuracion?.gamificacion_activa" 
-                   class="border-t pt-6">
-                <h4 class="text-sm font-medium text-gray-900 mb-4">Crea tu Personaje</h4>
-                
-                <!-- Nombre del personaje -->
-                <div class="mb-4">
-                  <label for="nombre_personaje" class="block text-sm font-medium text-gray-700">
-                    Nombre del Personaje *
-                  </label>
-                  <input
-                    id="nombre_personaje"
+                <!-- Selección de personaje -->
+                <div v-if="claseEncontrada && claseEncontrada.configuracion?.gamificacion_activa">
+                  <v-divider class="my-4"></v-divider>
+                  
+                  <h4 class="text-h6 mb-4">Crea tu Personaje</h4>
+                  
+                  <!-- Nombre del personaje -->
+                  <v-text-field
                     v-model="form.personaje.nombre"
-                    type="text"
-                    class="mt-1 block w-full border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm"
+                    label="Nombre del Personaje *"
                     placeholder="Ej: Alex el Sabio"
+                    prepend-icon="mdi-account"
+                    :error-messages="form.errors['personaje.nombre']"
+                    variant="outlined"
                     maxlength="50"
                     required
-                  />
-                  <div v-if="form.errors['personaje.nombre']" class="mt-2 text-sm text-red-600">
-                    {{ form.errors['personaje.nombre'] }}
-                  </div>
+                  ></v-text-field>
+
+                  <!-- Clase RPG -->
+                  <v-card variant="outlined" class="mb-4">
+                    <v-card-title class="text-subtitle-1">
+                      Clase de Personaje *
+                    </v-card-title>
+                    <v-card-text>
+                      <v-row>
+                        <v-col
+                          v-for="clase in clasesRpg"
+                          :key="clase.id"
+                          cols="12"
+                          sm="6"
+                        >
+                          <v-card
+                            :variant="form.personaje.id_clase_rpg === clase.id ? 'elevated' : 'outlined'"
+                            :color="form.personaje.id_clase_rpg === clase.id ? 'primary' : undefined"
+                            class="cursor-pointer"
+                            @click="form.personaje.id_clase_rpg = clase.id"
+                          >
+                            <v-card-text class="text-center">
+                              <div class="text-h4 mb-2">{{ clase.icono }}</div>
+                              <h5 class="text-subtitle-1 font-weight-bold">{{ clase.nombre }}</h5>
+                              <p class="text-caption">{{ clase.descripcion }}</p>
+                            </v-card-text>
+                          </v-card>
+                        </v-col>
+                      </v-row>
+                      
+                      <v-alert
+                        v-if="form.errors['personaje.id_clase_rpg']"
+                        type="error"
+                        variant="text"
+                        class="mt-2"
+                      >
+                        {{ form.errors['personaje.id_clase_rpg'] }}
+                      </v-alert>
+                    </v-card-text>
+                  </v-card>
                 </div>
 
-                <!-- Clase RPG -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-3">
-                    Clase de Personaje *
-                  </label>
-                  <div class="grid grid-cols-1 gap-3">
-                    <div
-                      v-for="clase in clasesRpg"
-                      :key="clase.id"
-                      @click="form.personaje.id_clase_rpg = clase.id"
-                      :class="[
-                        'relative rounded-lg border p-4 cursor-pointer focus:outline-none',
-                        form.personaje.id_clase_rpg === clase.id
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                      ]"
+                <!-- Botones -->
+                <v-row class="mt-4">
+                  <v-col>
+                    <v-btn
+                      :to="route('dashboard')"
+                      variant="outlined"
+                      size="large"
+                      class="mr-3"
                     >
-                      <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                          <span class="text-2xl">{{ clase.icono }}</span>
-                        </div>
-                        <div class="ml-3">
-                          <h5 class="text-sm font-medium text-gray-900">{{ clase.nombre }}</h5>
-                          <p class="text-xs text-gray-500">{{ clase.descripcion }}</p>
-                        </div>
-                      </div>
-                      <div v-if="form.personaje.id_clase_rpg === clase.id"
-                           class="absolute -inset-px rounded-lg border-2 border-green-500 pointer-events-none"></div>
-                    </div>
-                  </div>
-                  <div v-if="form.errors['personaje.id_clase_rpg']" class="mt-2 text-sm text-red-600">
-                    {{ form.errors['personaje.id_clase_rpg'] }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- Botones -->
-              <div class="flex items-center justify-end space-x-4 pt-6 border-t">
-                <Link
-                  :href="route('dashboard')"
-                  class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancelar
-                </Link>
-                
-                <button
-                  type="submit"
-                  :disabled="form.processing || !claseEncontrada"
-                  class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                >
-                  <span v-if="form.processing">Uniéndose...</span>
-                  <span v-else>Unirse a la Clase</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+                      Cancelar
+                    </v-btn>
+                    
+                    <v-btn
+                      type="submit"
+                      color="success"
+                      size="large"
+                      :loading="form.processing"
+                      :disabled="!claseEncontrada"
+                    >
+                      Unirse a la Clase
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-form>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
   </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3'
+import { Head, useForm } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { 
-  UserPlusIcon, 
-  CheckCircleIcon 
-} from '@heroicons/vue/24/outline'
 import { ref, watch } from 'vue'
 
 defineProps({
@@ -220,3 +233,9 @@ const submit = () => {
   })
 }
 </script>
+
+<style scoped>
+.cursor-pointer {
+  cursor: pointer;
+}
+</style>

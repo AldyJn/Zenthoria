@@ -81,4 +81,21 @@ class Usuario extends Authenticatable
     {
         return $this->correo;
     }
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar) {
+            return Storage::url($this->avatar);
+        }
+        return asset('images/default-avatar.png');
+    }
+
+    public function esDocente()
+    {
+        return $this->tipoUsuario->nombre === 'docente';
+    }
+
+    public function esEstudiante()
+    {
+        return $this->tipoUsuario->nombre === 'estudiante';
+    }
 }

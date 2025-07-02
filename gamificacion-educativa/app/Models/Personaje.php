@@ -5,7 +5,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Support\Facades\Storage;
 class Personaje extends Model
 {
     use HasFactory;
@@ -87,4 +87,25 @@ class Personaje extends Model
         $progreso = ($this->experiencia - $expActual) / ($expSiguiente - $expActual);
         return max(0, min(100, $progreso * 100));
     }
+    public function getImagenPersonalizadaUrlAttribute()
+{
+    if ($this->imagen_personalizada) {
+        return Storage::url($this->imagen_personalizada);
+    }
+    return null;
+}
+
+public function getImagenPerfilAttribute()
+{
+    // Prioridad: imagen personalizada > imagen de clase RPG > imagen por defecto
+    if ($this->imagen_personalizada) {
+        return Storage::url($this->imagen_personalizada);
+    }
+    
+    if ($this->claseRpg && $this->claseRpg->imagen_url) {
+        return asset($this->claseRpg->imagen_url);
+    }
+    
+    return asset('images/personajes/default-' . strtolower($this->avatar_base ?? 'guerrero') . '.png');
+}
 }
