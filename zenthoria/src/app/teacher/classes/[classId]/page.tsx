@@ -782,7 +782,7 @@ export default function TeacherClassDetailPage() {
       >
         <div className="text-center space-y-6">
           <p className="text-gray-400">
-            Los estudiantes pueden escanear este código QR para unirse a tu clase "{classData.name}"
+            Los estudiantes pueden escanear este código QR para unirse a tu clase '{classData.name}'
           </p>
           
           <ClassCodeQR
@@ -822,7 +822,7 @@ export default function TeacherClassDetailPage() {
           <div>
             <h3 className="text-xl font-bold text-white mb-2">¿Eliminar clase?</h3>
             <p className="text-gray-400 mb-4">
-              Esta acción eliminará permanentemente la clase "{classData.name}" y todos los datos asociados.
+              Esta acción eliminará permanentemente la clase '{classData.name}' y todos los datos asociados.
             </p>
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
               <p className="text-red-400 text-sm font-medium">

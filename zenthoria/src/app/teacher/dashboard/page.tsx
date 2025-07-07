@@ -1,8 +1,8 @@
-// src/app/teacher/dashboard/page.tsx
+// src/app/teacher/dashboard/page.tsx - Solución 2 Completa
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { 
   PlusIcon,
   AcademicCapIcon,
@@ -13,8 +13,7 @@ import {
   TrashIcon,
   LinkIcon,
   UserGroupIcon,
-  ChartBarIcon,
-  CalendarDaysIcon
+  ChartBarIcon
 } from '@heroicons/react/24/outline'
 import { useAuth, useTeacherInfo } from '@/hooks/useAuth'
 import { useClasses } from '@/hooks/useClasses'
@@ -25,14 +24,16 @@ import { cn } from '@/lib/utils/cn'
 // Componentes
 import { CreateClassModal } from '@/components/teacher/CreateClassModal'
 import { ClassJoinLinkModal } from '@/components/teacher/ClassJoinLinkModal'
-import { QRCodeDisplay, ClassCodeQR } from '@/components/ui/QRCodeDisplay'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/Modal'
 
 export default function TeacherDashboardPage() {
   const { user, isAuthenticated } = useAuth()
   const { teacherId } = useTeacherInfo()
-  const { classes, isLoading, refreshClasses, deleteClass } = useClasses()
+  const { classes: rawClasses, isLoading, refreshClasses, deleteClass } = useClasses()
+  
+  // Usar el tipo oficial de ClassWithDetails
+  const classes = (rawClasses || []) as ClassWithDetails[]
   
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showJoinLinkModal, setShowJoinLinkModal] = useState(false)
@@ -47,7 +48,22 @@ export default function TeacherDashboardPage() {
     }
   }, [isAuthenticated, teacherId, refreshClasses])
 
-  // Cálculos de estadísticas
+  // Función helper para obtener el conteo de estudiantes de forma segura
+  const getStudentCount = (classData: ClassWithDetails): number => {
+    // Intentar _count primero, luego enrollments.length, luego 0
+    return classData._count?.enrollments || 
+           classData.enrollments?.length || 
+           0
+  }
+
+  // Función helper para obtener el conteo de personajes de forma segura
+  // const getCharacterCount = (classData: ClassWithDetails): number => {
+  //   return classData._count?.characters || 
+  //          classData.characters?.length || 
+  //          0
+  // }
+
+  // Cálculos de estadísticas con funciones helper
   const totalClasses = classes.length
   const activeClasses = classes.filter(cls => {
     const now = new Date()
@@ -56,23 +72,22 @@ export default function TeacherDashboardPage() {
     return now >= start && now <= end
   })
   const upcomingClasses = classes.filter(cls => new Date(cls.startDate) > new Date())
-  const totalStudents = classes.reduce((sum, cls) => sum + cls._count.enrollments, 0)
+  const totalStudents = classes.reduce((sum, cls) => sum + getStudentCount(cls), 0)
   const averageStudentsPerClass = totalClasses > 0 ? Math.round(totalStudents / totalClasses) : 0
-  const capacityUsage = totalClasses > 0 
-    ? Math.round((totalStudents / classes.reduce((sum, cls) => sum + cls.maxStudents, 0)) * 100)
-    : 0
+  const totalCapacity = classes.reduce((sum, cls) => sum + cls.maxStudents, 0)
+  const capacityUsage = totalCapacity > 0 ? Math.round((totalStudents / totalCapacity) * 100) : 0
 
   const copyClassCode = async (code: string, className: string) => {
     try {
       await navigator.clipboard.writeText(code)
-      toast.success(`Código de "${className}" copiado`)
+      toast.success(`Código de '${className}' copiado`)
     } catch (error) {
       toast.error('Error al copiar código')
     }
   }
 
   const handleDeleteClass = async (classId: string, className: string) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar la clase "${className}"? Esta acción no se puede deshacer.`)) {
+    if (!confirm(`¿Estás seguro de que quieres eliminar la clase '${className}'? Esta acción no se puede deshacer.`)) {
       return
     }
 
@@ -175,7 +190,7 @@ export default function TeacherDashboardPage() {
           <StatsCard
             title="Uso de Capacidad"
             value={`${capacityUsage}%`}
-            subtitle={`${totalStudents} de ${classes.reduce((sum, cls) => sum + cls.maxStudents, 0)} plazas`}
+            subtitle={`${totalStudents} de ${totalCapacity} plazas`}
             icon={<ChartBarIcon className="w-8 h-8" />}
             color="from-purple-500 to-violet-600"
             bgColor="bg-purple-500/20"
@@ -262,7 +277,7 @@ export default function TeacherDashboardPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {activeClasses.slice(0, 3).map((cls) => {
-                  const isActive = true // Ya filtrado arriba
+                  const studentCount = getStudentCount(cls)
                   return (
                     <motion.div
                       key={cls.id}
@@ -273,7 +288,7 @@ export default function TeacherDashboardPage() {
                         <div className="flex-1">
                           <h4 className="text-white font-semibold truncate">{cls.name}</h4>
                           <div className="flex items-center space-x-2 text-sm text-gray-400 mt-1">
-                            <span>{cls._count.enrollments} estudiante{cls._count.enrollments !== 1 ? 's' : ''}</span>
+                            <span>{studentCount} estudiante{studentCount !== 1 ? 's' : ''}</span>
                             <span>•</span>
                             <span>Código: {cls.classCode}</span>
                             <span>•</span>
@@ -391,6 +406,7 @@ export default function TeacherDashboardPage() {
                   onShowQR={() => handleShowQR(cls)}
                   onShowJoinLink={() => handleShowJoinLink(cls)}
                   onDelete={() => handleDeleteClass(cls.id, cls.name)}
+                  getStudentCount={getStudentCount}
                 />
               ))}
             </div>
@@ -418,13 +434,14 @@ export default function TeacherDashboardPage() {
         {selectedClassForQR && (
           <div className="text-center space-y-6">
             <p className="text-gray-400">
-              Los estudiantes pueden escanear este código QR para unirse a "{selectedClassForQR.name}"
+              Los estudiantes pueden escanear este código QR para unirse a &quot;{selectedClassForQR.name}&quot;
             </p>
             
-            <ClassCodeQR
-              classCode={selectedClassForQR.classCode}
-              size={250}
-            />
+            <div className="flex justify-center">
+              <div className="bg-white p-4 rounded-lg">
+                <div className="text-2xl font-mono">{selectedClassForQR.classCode}</div>
+              </div>
+            </div>
           </div>
         )}
       </Modal>
@@ -545,16 +562,16 @@ interface ClassCardProps {
   onShowQR: () => void
   onShowJoinLink: () => void
   onDelete: () => void
+  getStudentCount: (classData: ClassWithDetails) => number
 }
 
-function ClassCard({ classData, viewMode, onCopyCode, onShowQR, onShowJoinLink, onDelete }: ClassCardProps) {
+function ClassCard({ classData, viewMode, onCopyCode, onShowQR, onShowJoinLink, onDelete, getStudentCount }: ClassCardProps) {
   const now = new Date()
   const startDate = new Date(classData.startDate)
   const endDate = new Date(classData.endDate)
   
   const isActive = now >= startDate && now <= endDate
   const isUpcoming = now < startDate
-  const isEnded = now > endDate
 
   const statusConfig = {
     active: { label: 'Activa', color: 'text-emerald-300', bg: 'bg-emerald-500/20' },
@@ -565,6 +582,8 @@ function ClassCard({ classData, viewMode, onCopyCode, onShowQR, onShowJoinLink, 
   const status = isActive ? statusConfig.active : 
                 isUpcoming ? statusConfig.upcoming : 
                 statusConfig.ended
+
+  const enrollmentCount = getStudentCount(classData)
 
   if (viewMode === 'list') {
     return (
@@ -578,7 +597,7 @@ function ClassCard({ classData, viewMode, onCopyCode, onShowQR, onShowJoinLink, 
             <div>
               <h3 className="text-xl font-semibold text-white">{classData.name}</h3>
               <div className="flex items-center space-x-4 text-sm text-gray-400 mt-1">
-                <span>{classData._count.enrollments} estudiantes</span>
+                <span>{enrollmentCount} estudiantes</span>
                 <span>•</span>
                 <span>Código: {classData.classCode}</span>
                 <span>•</span>
@@ -655,7 +674,7 @@ function ClassCard({ classData, viewMode, onCopyCode, onShowQR, onShowJoinLink, 
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-400">Estudiantes</span>
             <span className="text-white font-medium">
-              {classData._count.enrollments} / {classData.maxStudents}
+              {enrollmentCount} / {classData.maxStudents}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">

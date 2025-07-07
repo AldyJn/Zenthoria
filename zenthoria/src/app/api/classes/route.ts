@@ -1,41 +1,160 @@
-// src/app/api/classes/route.ts
+// src/app/api/classes/route.ts - Versión corregida para estudiantes
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
-import { createClass, getClassesByTeacher } from '@/lib/utils/db-helpers'
+import { prisma } from '@/lib/prisma'
+// import { Class } from '@prisma/client'
 import { z } from 'zod'
 
 const createClassSchema = z.object({
-  name: z.string().min(1, 'El nombre de la clase es requerido').max(100, 'El nombre es demasiado largo'),
-  description: z.string().max(500, 'La descripción es demasiado larga').optional(),
-  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Fecha de inicio inválida'),
-  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Fecha de fin inválida'),
-  maxStudents: z.number().min(1, 'Mínimo 1 estudiante').max(100, 'Máximo 100 estudiantes').optional()
-}).refine((data) => {
-  const start = new Date(data.startDate)
-  const end = new Date(data.endDate)
-  return start < end
-}, {
-  message: 'La fecha de inicio debe ser anterior a la fecha de fin',
-  path: ['endDate']
+  name: z.string().min(1, 'El nombre es requerido'),
+  description: z.string().optional(),
+  startDate: z.string(),
+  endDate: z.string(),
+  maxStudents: z.number().min(1).max(100)
 })
 
+// GET - Obtener clases según el rol del usuario
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.teacherId) {
+    if (!session?.user) {
       return NextResponse.json(
         { success: false, error: 'No autorizado' },
         { status: 401 }
       )
     }
 
-    const classes = await getClassesByTeacher(session.user.teacherId)
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const search = searchParams.get('search') || ''
+
+    let classes: any[] = []
+
+    if (session.user.role === 'teacher' && session.user.teacherId) {
+      // PROFESORES: Ver sus propias clases
+      classes = await prisma.class.findMany({
+        where: {
+          teacherId: session.user.teacherId,
+          ...(search && {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } }
+            ]
+          })
+        },
+        include: {
+          teacher: {
+            include: {
+              user: true
+            }
+          },
+          enrollments: {
+            where: { isActive: true },
+            include: {
+              student: {
+                include: {
+                  user: true
+                }
+              }
+            }
+          },
+          _count: {
+            select: {
+              enrollments: true,
+              characters: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit
+      })
+    } else if (session.user.role === 'student' && session.user.studentId) {
+      // ESTUDIANTES: Ver clases en las que están inscritos
+      const enrollments = await prisma.classEnrollment.findMany({
+        where: {
+          studentId: session.user.studentId,
+          isActive: true
+        },
+        include: {
+          class: {
+            include: {
+              teacher: {
+                include: {
+                  user: true
+                }
+              },
+              enrollments: {
+                where: { isActive: true },
+                include: {
+                  student: {
+                    include: {
+                      user: true
+                    }
+                  }
+                }
+              },
+              _count: {
+                select: {
+                  enrollments: true,
+                  characters: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { enrolledAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit
+      })
+
+      // Filtrar por búsqueda si existe
+      classes = enrollments
+        .map(enrollment => enrollment.class)
+        .filter(cls => {
+          if (!search) return true
+          return cls.name.toLowerCase().includes(search.toLowerCase()) ||
+                 cls.description?.toLowerCase().includes(search.toLowerCase())
+        })
+    }
+
+    // Contar total para paginación
+    let totalClasses = 0
+    if (session.user.role === 'teacher' && session.user.teacherId) {
+      totalClasses = await prisma.class.count({
+        where: { 
+          teacherId: session.user.teacherId,
+          ...(search && {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } }
+            ]
+          })
+        }
+      })
+    } else if (session.user.role === 'student' && session.user.studentId) {
+      totalClasses = await prisma.classEnrollment.count({
+        where: {
+          studentId: session.user.studentId,
+          isActive: true
+        }
+      })
+    }
 
     return NextResponse.json({
       success: true,
-      data: classes,
+      data: {
+        classes,
+        pagination: {
+          page,
+          limit,
+          total: totalClasses,
+          totalPages: Math.ceil(totalClasses / limit)
+        }
+      },
       message: 'Clases obtenidas exitosamente'
     })
 
@@ -48,13 +167,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST - Crear nueva clase (solo profesores)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.teacherId) {
       return NextResponse.json(
-        { success: false, error: 'No autorizado' },
+        { success: false, error: 'Solo los profesores pueden crear clases' },
         { status: 401 }
       )
     }
@@ -75,13 +195,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const classData = {
-      teacherId: session.user.teacherId,
-      ...validationResult.data
-    }
+    const { name, description, startDate, endDate, maxStudents } = validationResult.data
+
+    // Generar código único para la clase
+    const classCode = await generateUniqueClassCode()
 
     // Crear la clase
-    const newClass = await createClass(classData)
+    const newClass = await prisma.class.create({
+      data: {
+        name,
+        description,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        maxStudents,
+        classCode,
+        teacherId: session.user.teacherId
+      },
+      include: {
+        teacher: {
+          include: {
+            user: true
+          }
+        },
+        _count: {
+          select: {
+            enrollments: true,
+            characters: true
+          }
+        }
+      }
+    })
 
     return NextResponse.json({
       success: true,
@@ -92,10 +235,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error al crear clase:', error)
     
-    if (error instanceof Error) {
+    if (error instanceof Error && error.message.includes('Unique constraint')) {
       return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 400 }
+        { success: false, error: 'Ya existe una clase con ese nombre' },
+        { status: 409 }
       )
     }
 
@@ -104,4 +247,26 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// Función auxiliar para generar código único
+async function generateUniqueClassCode(): Promise<string> {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let code: string
+  let isUnique = false
+
+  do {
+    code = ''
+    for (let i = 0; i < 6; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length))
+    }
+
+    const existingClass = await prisma.class.findUnique({
+      where: { classCode: code }
+    })
+
+    isUnique = !existingClass
+  } while (!isUnique)
+
+  return code
 }

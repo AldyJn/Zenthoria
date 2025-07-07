@@ -47,7 +47,7 @@ export function ClassJoinLinkModal({ isOpen, onClose, classData }: ClassJoinLink
     try {
       await navigator.clipboard.writeText(text)
       setCopied(type)
-      toast.success(`${type} copiado al portapapeles`)
+      toast.success('${type} copiado al portapapeles')
       setTimeout(() => setCopied(null), 2000)
     } catch (error) {
       toast.error('Error al copiar')
@@ -101,7 +101,7 @@ export function ClassJoinLinkModal({ isOpen, onClose, classData }: ClassJoinLink
               <div className="flex items-center justify-between p-6 border-b border-white/20">
                 <div>
                   <h2 className="text-2xl font-bold text-white">Invitar Estudiantes</h2>
-                  <p className="text-gray-400 mt-1">Comparte el enlace para que se unan a "{classData.name}"</p>
+                  <p className="text-gray-400 mt-1">Comparte el enlace para que se unan a '{classData.name}'</p>
                 </div>
                 <button
                   onClick={onClose}
