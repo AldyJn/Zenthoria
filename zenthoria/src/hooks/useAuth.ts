@@ -1,7 +1,7 @@
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState, useCallback } from 'react'
-import { toast } from 'react-hot-toast'
+import { toast } from '@/components/ui/Toast'
 import { UserRole } from '@prisma/client'
 import { LoginFormData, RegisterFormData } from '@/lib/validations/auth'
 import { ApiResponse } from '@/types'

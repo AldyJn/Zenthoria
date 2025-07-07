@@ -102,7 +102,7 @@ function CustomToast({ type, title, message, onDismiss }: CustomToastProps) {
   )
 }
 
-// Funciones helper para mostrar toasts
+// Funciones helper para mostrar toasts - DECLARACIÓN ÚNICA
 export const toast = {
   success: (title: string, message?: string, options?: ToastOptions) => {
     return hotToast.custom(
@@ -177,6 +177,11 @@ export const toast = {
     success: (message: string, options?: ToastOptions) => hotToast.success(message, options),
     error: (message: string, options?: ToastOptions) => hotToast.error(message, options),
     loading: (message: string, options?: ToastOptions) => hotToast.loading(message, options),
+    info: (message: string, options?: ToastOptions) => hotToast(message, {
+      icon: 'ℹ️',
+      duration: 4000,
+      ...options
+    })
   }
 }
 
@@ -204,6 +209,7 @@ export function ToastProvider() {
 }
 
 // Toast especial para autenticación con tema Destiny 2
+// ✅ USAR REFERENCIA AL toast YA DECLARADO ARRIBA
 export const authToast = {
   loginSuccess: (userName: string) => {
     toast.success(
