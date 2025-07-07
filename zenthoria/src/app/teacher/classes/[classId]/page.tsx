@@ -1,7 +1,7 @@
 // src/app/teacher/classes/[classId]/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
@@ -9,7 +9,6 @@ import {
   QrCodeIcon, 
   ChartBarIcon,
   PencilIcon,
-  Cog6ToothIcon,
   ShareIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
@@ -23,7 +22,6 @@ import { RandomSelector } from '@/components/teacher/RandomSelector'
 import { StudentsList } from '@/components/teacher/StudentsList'
 import { EmptyStateTeacher } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
-import { StatBar } from '@/components/ui/StatBar'
 
 export default function TeacherClassDetailPage() {
   const params = useParams()
@@ -38,13 +36,7 @@ export default function TeacherClassDetailPage() {
   const [showQRModal, setShowQRModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-  useEffect(() => {
-    if (isAuthenticated && user?.role === 'teacher') {
-      fetchClassData()
-    }
-  }, [isAuthenticated, user, classId])
-
-  const fetchClassData = async () => {
+  const fetchClassData = useCallback(async () => {
     try {
       setIsLoading(true)
 
@@ -69,7 +61,13 @@ export default function TeacherClassDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [classId])
+
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'teacher') {
+      fetchClassData()
+    }
+  }, [isAuthenticated, user, fetchClassData])
 
   const handleBulkAction = async (action: string, studentIds: string[]) => {
     try {
@@ -413,7 +411,7 @@ export default function TeacherClassDetailPage() {
                     </div>
                   </div>
                   
-                  {students.slice(0, 3).map((student, index) => (
+                  {students.slice(0, 3).map((student) => (
                     <div key={student.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
                       <span className="text-2xl">
                         {student.characterType.name === 'hunter' ? '🏹' : 
@@ -469,7 +467,7 @@ export default function TeacherClassDetailPage() {
                 <RandomSelector
                   students={students}
                   classId={classId}
-                  onSelection={(student) => {
+                  onSelection={() => {
                     // Refrescar datos después de selección
                     fetchClassData()
                   }}
@@ -580,7 +578,7 @@ export default function TeacherClassDetailPage() {
       >
         <div className="space-y-4">
           <p className="text-gray-300">
-            ¿Estás seguro de que quieres eliminar la clase <strong>"{classData?.name}"</strong>?
+            ¿Estás seguro de que quieres eliminar la clase <strong>&quot;{classData?.name}&quot;</strong>?
           </p>
           <p className="text-red-400 text-sm">
             Esta acción no se puede deshacer. Se perderán todos los datos de estudiantes y progreso.

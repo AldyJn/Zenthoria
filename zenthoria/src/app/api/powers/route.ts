@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const levelRequired = searchParams.get('levelRequired')
 
     // Construir filtros dinámicos
-    let whereClause: any = {
+    const whereClause: any = {
       isActive: true
     }
 

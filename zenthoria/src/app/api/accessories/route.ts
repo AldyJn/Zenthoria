@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const maxCost = searchParams.get('maxCost')
 
     // Construir filtros dinámicos
-    let whereClause: any = {
+    const whereClause: any = {
       isActive: true
     }
 

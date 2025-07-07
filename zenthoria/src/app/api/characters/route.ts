@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const classId = searchParams.get('classId')
 
-    let whereClause: any = {
+    const whereClause: any = {
       studentId: session.user.studentId
     }
 

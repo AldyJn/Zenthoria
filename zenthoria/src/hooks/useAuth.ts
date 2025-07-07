@@ -58,50 +58,64 @@ export function useAuth(): UseAuthReturn {
   /**
    * Función para iniciar sesión
    */
-  const login = useCallback(async (data: LoginFormData): Promise<boolean> => {
-    if (isLoggingIn) return false
+const login = useCallback(async (data: LoginFormData): Promise<boolean> => {
+  if (isLoggingIn) return false
 
-    setIsLoggingIn(true)
-    
-    try {
-      console.log('🔑 Intentando iniciar sesión con:', data.email)
+  setIsLoggingIn(true)
+  
+  try {
+    console.log('🔑 Intentando iniciar sesión con:', data.email)
 
-      const result = await signIn('credentials', {
-        email: data.email,
-        password: data.password,
-        redirect: false
-      })
+    const result = await signIn('credentials', {
+      email: data.email,
+      password: data.password,
+      redirect: false
+    })
 
-      if (result?.error) {
-        console.error('❌ Error en login:', result.error)
-        toast.error('Email o contraseña incorrectos')
-        return false
-      }
-
-      if (result?.ok) {
-        console.log('✅ Login exitoso')
-        toast.success('¡Bienvenido a Zenthoria!')
-        
-        // Redirigir según el rol (el redirect se maneja en el callback de NextAuth)
-        // Pero podemos forzar una redirección aquí si es necesario
-        setTimeout(() => {
-          router.refresh()
-        }, 100)
-        
-        return true
-      }
-
+    if (result?.error) {
+      console.error('❌ Error en login:', result.error)
+      toast.error('Email o contraseña incorrectos')
       return false
-
-    } catch (error) {
-      console.error('❌ Error en login:', error)
-      toast.error('Error al iniciar sesión. Intente nuevamente.')
-      return false
-    } finally {
-      setIsLoggingIn(false)
     }
-  }, [isLoggingIn, router])
 
+    if (result?.ok) {
+      console.log('✅ Login exitoso')
+      toast.success('¡Bienvenido a Zenthoria!')
+      
+      // NUEVA LÓGICA DE REDIRECCIÓN
+      // Esperar un momento para que la sesión se actualice
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Obtener la sesión actualizada
+      const response = await fetch('/api/auth/session')
+      const sessionData = await response.json()
+      
+      if (sessionData?.user?.role) {
+        const dashboardUrl = sessionData.user.role === 'teacher' 
+          ? '/teacher/dashboard' 
+          : '/student/dashboard'
+        
+        console.log('🔄 Redirigiendo a:', dashboardUrl)
+        router.push(dashboardUrl)
+      } else {
+        // Fallback: refrescar la página para activar middleware
+        router.refresh()
+        window.location.href = '/'
+      }
+      
+      return true
+    }
+
+    return false
+
+  } catch (error) {
+    console.error('❌ Error en login:', error)
+    toast.error('Error al iniciar sesión. Intente nuevamente.')
+    return false
+  } finally {
+    setIsLoggingIn(false)
+  }
+}, [isLoggingIn, router])
   /**
    * Función para registrarse
    */

@@ -107,7 +107,7 @@ export async function POST(
 
     // Calcular recompensas por level up
     let lightBonus = 0
-    let statBonuses = { discipline: 0, intellect: 0, strength: 0, charisma: 0 }
+    const statBonuses = { discipline: 0, intellect: 0, strength: 0, charisma: 0 }
     
     if (leveledUp) {
       // +10 luz por cada nivel ganado

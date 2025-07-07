@@ -1,7 +1,7 @@
 // src/app/student/characters/create/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
@@ -80,13 +80,7 @@ export default function CreateCharacterPage() {
   const selectedTypeId = watchedData.characterTypeId
   const selectedType = characterTypes.find(t => t.id === selectedTypeId)
 
-  useEffect(() => {
-    if (isAuthenticated && user?.role === 'student') {
-      fetchInitialData()
-    }
-  }, [isAuthenticated, user, classId])
-
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     try {
       setIsLoading(true)
 
@@ -112,7 +106,13 @@ export default function CreateCharacterPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [classId])
+
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'student') {
+      fetchInitialData()
+    }
+  }, [isAuthenticated, user, fetchInitialData])
 
   const handleNext = () => {
     if (currentStep === 'type' && selectedTypeId) {
