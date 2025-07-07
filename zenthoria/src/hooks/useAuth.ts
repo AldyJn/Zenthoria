@@ -82,27 +82,33 @@ const login = useCallback(async (data: LoginFormData): Promise<boolean> => {
       console.log('✅ Login exitoso')
       toast.success('¡Bienvenido a Zenthoria!')
       
-      // NUEVA LÓGICA DE REDIRECCIÓN
-      // Esperar un momento para que la sesión se actualice
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // SOLUCIÓN: Esperar más tiempo y verificar sesión múltiples veces
+      let attempts = 0
+      const maxAttempts = 5
       
-      // Obtener la sesión actualizada
-      const response = await fetch('/api/auth/session')
-      const sessionData = await response.json()
-      
-      if (sessionData?.user?.role) {
-        const dashboardUrl = sessionData.user.role === 'teacher' 
-          ? '/teacher/dashboard' 
-          : '/student/dashboard'
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 500))
         
-        console.log('🔄 Redirigiendo a:', dashboardUrl)
-        router.push(dashboardUrl)
-      } else {
-        // Fallback: refrescar la página para activar middleware
-        router.refresh()
-        window.location.href = '/'
+        const response = await fetch('/api/auth/session')
+        const sessionData = await response.json()
+        
+        if (sessionData?.user?.role && sessionData?.user?.studentId) {
+          const dashboardUrl = sessionData.user.role === 'teacher' 
+            ? '/teacher/dashboard' 
+            : '/student/dashboard'
+          
+          console.log('🔄 Sesión verificada, redirigiendo a:', dashboardUrl)
+          router.push(dashboardUrl)
+          return true
+        }
+        
+        attempts++
+        console.log(`⏳ Esperando sesión... intento ${attempts}/${maxAttempts}`)
       }
       
+      // Fallback: recargar página completa
+      console.log('⚠️ Sesión no detectada, recargando página...')
+      window.location.href = '/'
       return true
     }
 
@@ -115,8 +121,7 @@ const login = useCallback(async (data: LoginFormData): Promise<boolean> => {
   } finally {
     setIsLoggingIn(false)
   }
-}, [isLoggingIn, router])
-  /**
+}, [isLoggingIn, router])  /**
    * Función para registrarse
    */
   const register = useCallback(async (data: RegisterFormData): Promise<boolean> => {

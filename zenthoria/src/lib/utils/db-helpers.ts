@@ -301,11 +301,15 @@ export async function getStudentsByClass(classId: string) {
  */
 export async function joinClassByCode(studentId: string, classCode: string) {
   try {
+    console.log('🔍 Iniciando proceso de unirse a clase:', { studentId, classCode })
+    
     // Verificar que la clase existe y está activa
     const classData = await getClassByCode(classCode)
     if (!classData) {
       throw new Error('Código de clase inválido o clase no encontrada')
     }
+    
+    console.log('✅ Clase encontrada:', classData.name)
 
     // Verificar que el estudiante no esté ya inscrito
     const existingEnrollment = await prisma.classEnrollment.findUnique({
@@ -318,6 +322,7 @@ export async function joinClassByCode(studentId: string, classCode: string) {
     })
 
     if (existingEnrollment) {
+      console.log('⚠️ El estudiante ya está inscrito')
       throw new Error('Ya estás inscrito en esta clase')
     }
 
@@ -326,35 +331,59 @@ export async function joinClassByCode(studentId: string, classCode: string) {
       throw new Error('La clase ha alcanzado el límite máximo de estudiantes')
     }
 
-    // Crear la inscripción
-    const enrollment = await prisma.classEnrollment.create({
-      data: {
-        studentId,
-        classId: classData.id,
-      },
-      include: {
-        class: {
-          include: {
-            teacher: {
-              include: {
-                user: true,
+    // SOLUCIÓN: Usar transacción para asegurar atomicidad
+    const result = await prisma.$transaction(async (tx) => {
+      // Crear la inscripción
+      const enrollment = await tx.classEnrollment.create({
+        data: {
+          studentId,
+          classId: classData.id,
+          isActive: true,
+        },
+        include: {
+          class: {
+            include: {
+              teacher: {
+                include: {
+                  user: true,
+                },
               },
             },
           },
+          student: {
+            include: {
+              user: true,
+            },
+          },
         },
-      },
+      })
+      
+      console.log('✅ Inscripción creada:', enrollment)
+      
+      // Verificar que se guardó correctamente
+      const verification = await tx.classEnrollment.findUnique({
+        where: {
+          studentId_classId: {
+            studentId,
+            classId: classData.id,
+          },
+        },
+      })
+      
+      if (!verification) {
+        throw new Error('Error al verificar la inscripción')
+      }
+      
+      console.log('✅ Inscripción verificada')
+      return enrollment
     })
 
-    return enrollment
+    return result
   } catch (error) {
-    console.error('Error al unirse a la clase:', error)
+    console.error('❌ Error al unirse a la clase:', error)
     throw error
   }
 }
-
-// ============================================================================
-// FUNCIONES DE PERSONAJES
-// ============================================================================
 
 /**
  * Obtiene todos los tipos de personajes disponibles

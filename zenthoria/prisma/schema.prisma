@@ -61,7 +61,6 @@ enum SelectionMethod {
   cards
   algorithm
 }
-
 // Modelo base de usuarios
 model User {
   id           String   @id @default(uuid())
@@ -74,13 +73,13 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  // Relaciones
+ // Relaciones
   teacher Teacher?
   student Student?
-
+  userCharacters UserCharacter[] 
+  
   @@map("users")
 }
-
 // Modelo de profesores
 model Teacher {
   id          String  @id @default(uuid())
@@ -171,10 +170,11 @@ model CharacterType {
 
   // Relaciones
   characters StudentCharacter[]
+  userCharacters UserCharacter[]  // NUEVA RELACIÓN
   powers     Power[]
-
+  
   @@map("character_types")
-}
+  }
 
 // Modelo de personajes de estudiantes
 model StudentCharacter {
@@ -309,3 +309,19 @@ model RandomSelection {
 
   @@map("random_selections")
 }
+model UserCharacter {
+  id                   String   @id @default(uuid())
+  userId               String   @map("user_id")
+  characterTypeId      String   @map("character_type_id")
+  characterName        String   @map("character_name")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  characterType   CharacterType @relation(fields: [characterTypeId], references: [id])
+  
+  @@map("user_characters")
+}
+
