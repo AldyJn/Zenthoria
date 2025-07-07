@@ -1,3 +1,4 @@
+'use client'
 import { toast as hotToast, Toaster, ToastOptions } from 'react-hot-toast'
 import { motion } from 'framer-motion'
 import { 
