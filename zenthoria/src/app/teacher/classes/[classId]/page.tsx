@@ -532,7 +532,7 @@ export default function TeacherClassDetailPage() {
                       <div className="flex items-center space-x-3 mb-3">
                         <div className="w-12 h-12 bg-gradient-to-br from-solar-500 to-orange-600 rounded-full flex items-center justify-center">
                           <span className="text-white font-bold">
-                            {student.characterName.charAt(0)}
+                            {student?.characterName?.charAt(0) ?? '—'}
                           </span>
                         </div>
                         <div className="flex-1">
@@ -586,7 +586,26 @@ export default function TeacherClassDetailPage() {
                     <div className="flex items-center justify-center space-x-4">
                       <div className="w-16 h-16 bg-gradient-to-br from-solar-500 to-orange-600 rounded-full flex items-center justify-center">
                         <span className="text-white font-bold text-xl">
-                          {selectedStudent.characterName.charAt(0)}
+                           {selectedStudent && (
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="mb-6 p-6 bg-gradient-to-br from-solar-500/20 to-orange-600/20 rounded-xl border border-solar-500/30"
+                  >
+                    <h4 className="text-xl font-bold text-white mb-2">Estudiante Seleccionado:</h4>
+                    <div className="flex items-center justify-center space-x-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-solar-500 to-orange-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-xl">
+                           {selectedStudent?.characterName?.charAt(0) ?? '—'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-white">{selectedStudent.characterName}</p>
+                        <p className="text-solar-400">{selectedStudent.characterType?.name || 'Guardian'}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
                         </span>
                       </div>
                       <div>
@@ -630,7 +649,8 @@ export default function TeacherClassDetailPage() {
                         <div className="flex items-center space-x-2">
                           <div className="w-8 h-8 bg-gradient-to-br from-solar-500 to-orange-600 rounded-full flex items-center justify-center">
                             <span className="text-white font-bold text-sm">
-                              {student.characterName.charAt(0)}
+                              {student?.characterName?.charAt(0) ?? '—'}
+
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
@@ -861,7 +881,8 @@ export default function TeacherClassDetailPage() {
           >
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="font-bold">{selectedStudent.characterName.charAt(0)}</span>
+                <span className="font-bold">{selectedStudent?.characterName?.charAt(0) ?? '—'}</span>
+
               </div>
               <div>
                 <p className="font-medium">¡Estudiante Seleccionado!</p>

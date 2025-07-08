@@ -362,6 +362,7 @@ export function RegisterForm() {
             {errors.confirmPassword.message}
           </motion.p>
         )}
+        
       </div>
 
       {/* Checkbox de términos y condiciones */}

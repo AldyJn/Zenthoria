@@ -92,23 +92,34 @@ const login = useCallback(async (data: LoginFormData): Promise<boolean> => {
         const response = await fetch('/api/auth/session')
         const sessionData = await response.json()
         
-        if (sessionData?.user?.role && sessionData?.user?.studentId) {
-          const dashboardUrl = sessionData.user.role === 'teacher' 
-            ? '/teacher/dashboard' 
-            : '/student/dashboard'
-          
-          console.log('🔄 Sesión verificada, redirigiendo a:', dashboardUrl)
-          router.push(dashboardUrl)
-          return true
+        if (sessionData?.user?.role) {
+          // Verificar que tenga teacherId o studentId según el rol
+          const hasValidId = sessionData.user.role === 'teacher' 
+            ? sessionData.user.teacherId 
+            : sessionData.user.studentId
+            
+          if (hasValidId) {
+            const dashboardUrl = sessionData.user.role === 'teacher' 
+              ? '/teacher/dashboard' 
+              : '/student/dashboard'
+            
+            console.log('🔄 Sesión verificada, redirigiendo a:', dashboardUrl)
+            router.push(dashboardUrl)
+            return true
+          }
         }
         
         attempts++
         console.log(`⏳ Esperando sesión... intento ${attempts}/${maxAttempts}`)
       }
       
-      // Fallback: recargar página completa
-      console.log('⚠️ Sesión no detectada, recargando página...')
-      window.location.href = '/'
+      // Fallback: usar window.location para forzar recarga
+      const defaultUrl = data.email.includes('teacher') 
+        ? '/teacher/dashboard' 
+        : '/student/dashboard'
+      
+      console.log('⚠️ Usando redirección forzada a:', defaultUrl)
+      window.location.href = defaultUrl
       return true
     }
 
@@ -121,7 +132,8 @@ const login = useCallback(async (data: LoginFormData): Promise<boolean> => {
   } finally {
     setIsLoggingIn(false)
   }
-}, [isLoggingIn, router])  /**
+}, [isLoggingIn, router]) 
+/**
    * Función para registrarse
    */
   const register = useCallback(async (data: RegisterFormData): Promise<boolean> => {
